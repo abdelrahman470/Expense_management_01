@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المصاريف الشهرية</title>
+
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-wallet me-2"></i>
+                إدارة المصاريف
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showDashboard()">
+                            <i class="fas fa-home me-1"></i>
+                            الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showAddForm()">
+                            <i class="fas fa-plus me-1"></i>
+                            إضافة عملية
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="d-flex">
+                    <button class="btn btn-outline-light btn-sm me-2 none" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        تصدير PDF
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="resetAllData()">
+                        <i class="fas fa-trash me-1"></i>
+                        مسح الكل
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section">
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card summary-card income-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-arrow-up text-success mb-3"></i>
+                            <h5 class="card-title text-light">إجمالي الدخل</h5>
+                            <h3 class="text-success" id="total-income">0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card summary-card expense-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-arrow-down text-danger mb-3"></i>
+                            <h5 class="card-title text-light">إجمالي المصروفات</h5>
+                            <h3 class="text-danger" id="total-expenses">0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="card summary-card balance-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-balance-scale text-info mb-3"></i>
+                            <h5 class="card-title text-light">الرصيد المتبقي</h5>
+                            <h3 class="text-info" id="remaining-balance">0.00</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row mb-4">
+                <div class="col-lg-8 mb-3">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h5 class="card-title text-light mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                الرسم البياني الشهري
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-3">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h5 class="card-title text-light mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                توزيع المصروفات
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary-custom text-light">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control bg-secondary-custom text-light" id="searchInput"
+                            placeholder="البحث في العمليات...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select bg-secondary-custom text-light" id="typeFilter">
+                        <option value="">جميع الأنواع</option>
+                        <option value="income">دخل</option>
+                        <option value="expense">مصروف</option>
+                    </select>
+                </div>
+                <div class="col-md-3 none">
+                    <select class="form-select bg-secondary-custom text-light" id="categoryFilter">
+                        <option value="">جميع الفئات</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Transactions Table -->
+            <div class="card table-card">
+                <div class="card-header">
+                    <h5 class="card-title text-light mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        قائمة العمليات
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover" id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortTable(0)">التاريخ <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(1)">النوع <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(2)">الفئة <i class="fas fa-sort"></i></th>
+                                    <th onclick="sortTable(3)">المبلغ <i class="fas fa-sort"></i></th>
+                                    <th>الملاحظات</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                                <!-- Transactions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Form Section -->
+        <div id="form-section" style="display: none;">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="card form-card">
+                        <div class="card-header">
+                            <h5 class="card-title text-light mb-0">
+                                <i class="fas fa-plus me-2"></i>
+                                إضافة عملية جديدة
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="transactionForm">
+                                <input type="hidden" id="editId" value="">
+
+                                <div class="mb-3">
+                                    <label class="form-label text-light">نوع العملية</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="type" id="income" value="income">
+                                        <label class="btn btn-outline-success" for="income">
+                                            <i class="fas fa-arrow-up me-1"></i>
+                                            دخل
+                                        </label>
+
+                                        <input type="radio" class="btn-check" name="type" id="expense" value="expense"
+                                            checked>
+                                        <label class="btn btn-outline-danger" for="expense">
+                                            <i class="fas fa-arrow-down me-1"></i>
+                                            مصروف
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="category" class="form-label text-light">الفئة</label>
+                                    <select class="form-select bg-secondary-custom text-light" id="category" required>
+                                        <option value="">اختر الفئة</option>
+                                        <option value="طعام">طعام</option>
+                                        <option value="مواصلات">مواصلات</option>
+                                        <option value="فواتير">فواتير</option>
+                                        <option value="تسلية">تسلية</option>
+                                        <option value="صحة">صحة</option>
+                                        <option value="تعليم">تعليم</option>
+                                        <option value="أخرى">أخرى</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label text-light">المبلغ</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control bg-secondary-custom text-light"
+                                            id="amount" step="0.01" min="0" required>
+                                        <span class="input-group-text bg-secondary-custom text-light">ج.م</span>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="date" class="form-label text-light">التاريخ</label>
+                                    <input type="date" class="form-control bg-secondary-custom text-light" id="date"
+                                        required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label text-light">ملاحظات</label>
+                                    <textarea class="form-control bg-secondary-custom text-light" id="notes" rows="3"
+                                        placeholder="ملاحظات إضافية (اختياري)"></textarea>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-secondary" onclick="showDashboard()">
+                                        <i class="fas fa-times me-1"></i>
+                                        إلغاء
+                                    </button>
+                                    <button type="submit" class="btn btn-primary-custom">
+                                        <i class="fas fa-save me-1"></i>
+                                        حفظ
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+
+</html>
